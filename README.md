@@ -1,7 +1,7 @@
 # ShadowNAND Installer
 *ShadowNAND installer/updater/uninstaller*
 
-**Usage / Features:*
+**Usage / Features:**
 
 Do NOT use if you don't know what you're doing. This is highly experimental and I'm not responsible for any bricks.
 
