@@ -47,12 +47,11 @@ void main(void)
 
     drawString(TITLE, 10, 10, COLOR_TITLE);
     posY = drawString("Thanks to delebile, #cakey and StandardBus", 10, 40, COLOR_WHITE);
-    posY = drawString(a9lhBoot ? "Press SELECT to update A9LH, START to uninstall" : "Press SELECT for a full install", 10, posY + SPACING_Y, COLOR_WHITE);
+    posY = drawString(a9lhBoot ? "Press SELECT to update ShadowNAND" : "Press SELECT for a full install", 10, posY + SPACING_Y, COLOR_WHITE);
     posY = drawString("Press any other button to shutdown", 10, posY, COLOR_WHITE);
 
     u32 pressed = waitInput();
     if(pressed == BUTTON_SELECT) installer(a9lhBoot);
-    if(pressed == BUTTON_START && a9lhBoot) uninstaller();
 
     shutdown(0, NULL);
 }
@@ -69,7 +68,7 @@ static inline void installer(u32 a9lhBoot)
     if(!a9lhBoot)
     {
         //Read OTP
-        path = "a9lh/otp.bin";
+        path = "homebrew/a9lh/otp.bin";
         if(fileRead((void *)OTP_OFFSET, path) != 256)
         {
             const u8 zeroes[256] = {0};
@@ -97,7 +96,7 @@ static inline void installer(u32 a9lhBoot)
     {
 		 updatea9lh = 1;
 		 //Read decrypted key sector
-         path = "a9lh/secret_sector.bin";
+         path = "homebrew/a9lh/secret_sector.bin";
          if(fileRead((void *)SECTOR_OFFSET, path) != 0x200)
              shutdown(1, "Error: secret_sector.bin doesn't exist or has\na wrong size");
          if(!verifyHash((void *)SECTOR_OFFSET, 0x200, sectorHash))
@@ -110,7 +109,7 @@ static inline void installer(u32 a9lhBoot)
         generateSector((u8 *)SECTOR_OFFSET, 0);
 
         //Read FIRM0
-        path = "a9lh/firm0.bin";
+        path = "homebrew/a9lh/firm0.bin";
         if(fileRead((void *)FIRM0_OFFSET, path) != FIRM0_SIZE)
             shutdown(1, "Error: firm0.bin doesn't exist or has a wrong size");
 
@@ -121,7 +120,7 @@ static inline void installer(u32 a9lhBoot)
     if(!a9lhBoot)
     {
         //Read FIRM1
-        path = "a9lh/firm1.bin";
+        path = "homebrew/a9lh/firm1.bin";
         if(fileRead((void *)FIRM1_OFFSET, path) != FIRM1_SIZE)
             shutdown(1, "Error: firm1.bin doesn't exist or has a wrong size");
 
@@ -131,7 +130,7 @@ static inline void installer(u32 a9lhBoot)
 
     //Inject stage1
     memset32((void *)STAGE1_OFFSET, 0, MAX_STAGE1_SIZE);
-    path = "a9lh/payload_stage1.bin";
+    path = "homebrew/a9lh/payload_stage1.bin";
     u32 size = fileRead((void *)STAGE1_OFFSET, path);
     if(!size || size > MAX_STAGE1_SIZE)
         shutdown(1, "Error: payload_stage1.bin doesn't exist or\nexceeds max size");
@@ -142,14 +141,14 @@ static inline void installer(u32 a9lhBoot)
 
     //Read stage2
     memset32((void *)STAGE2_OFFSET, 0, MAX_STAGE2_SIZE);
-    path = "a9lh/payload_stage2.bin";
+    path = "homebrew/a9lh/payload_stage2.bin";
     size = fileRead((void *)STAGE2_OFFSET, path);
     if(!size || size > MAX_STAGE2_SIZE)
         shutdown(1, "Error: payload_stage2.bin doesn't exist or\nexceeds max size");
 
     //Read alt_stage2
     memset32((void *)ALTSTAGE2_OFFSET, 0, MAX_ALTSTAGE2_SIZE);
-    path = "a9lh/payload_altstage2.bin";
+    path = "homebrew/a9lh/payload_altstage2.bin";
     size = fileRead((void *)ALTSTAGE2_OFFSET, path);
     if(!size || size > MAX_ALTSTAGE2_SIZE)
         shutdown(1, "Error: payload_altstage2.bin doesn't exist or\nexceeds max size");
