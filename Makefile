@@ -31,7 +31,7 @@ all: launcher a9lh 2xrsa
 launcher: $(dir_out)/$(name).dat
 
 .PHONY: a9lh
-a9lh: $(dir_out)/sNANDi.bin
+a9lh: $(dir_out)/ShadowNAND_Installer.bin
 
 .PHONY: 2xrsa
 2xrsa: $(dir_out)/arm9.bin $(dir_out)/arm11.bin
@@ -57,7 +57,7 @@ $(dir_out)/$(name).dat: $(dir_build)/main.bin $(dir_out)
 	@$(MAKE) $(FLAGS) -C $(dir_mset) launcher
 	dd if=$(dir_build)/main.bin of=$@ bs=512 seek=144
 
-$(dir_out)/sNANDi.bin: $(dir_build)/main.bin $(dir_out)
+$(dir_out)/ShadowNAND_Installer.bin: $(dir_build)/main.bin $(dir_out)
 	@cp -av $(dir_build)/main.bin $@
 
 $(dir_out)/arm9.bin: $(dir_build)/main.bin $(dir_out)
