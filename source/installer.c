@@ -68,7 +68,7 @@ static inline void installer(u32 a9lhBoot)
     if(!a9lhBoot)
     {
         //Read OTP
-        path = "homebrew/a9lh/otp.bin";
+        path = "homebrew/3ds/ShadowNAND_Installer/otp.bin";
         if(fileRead((void *)OTP_OFFSET, path) != 256)
         {
             const u8 zeroes[256] = {0};
@@ -96,7 +96,7 @@ static inline void installer(u32 a9lhBoot)
     {
 		 updatea9lh = 1;
 		 //Read decrypted key sector
-         path = "homebrew/a9lh/secret_sector.bin";
+         path = "homebrew/3ds/ShadowNAND_Installer/secret_sector.bin";
          if(fileRead((void *)SECTOR_OFFSET, path) != 0x200)
              shutdown(1, "Error: secret_sector.bin doesn't exist or has\na wrong size");
          if(!verifyHash((void *)SECTOR_OFFSET, 0x200, sectorHash))
@@ -109,7 +109,7 @@ static inline void installer(u32 a9lhBoot)
         generateSector((u8 *)SECTOR_OFFSET, 0);
 
         //Read FIRM0
-        path = "homebrew/a9lh/firm0.bin";
+        path = "homebrew/3ds/ShadowNAND_Installer/firm0.bin";
         if(fileRead((void *)FIRM0_OFFSET, path) != FIRM0_SIZE)
             shutdown(1, "Error: firm0.bin doesn't exist or has a wrong size");
 
@@ -120,7 +120,7 @@ static inline void installer(u32 a9lhBoot)
     if(!a9lhBoot)
     {
         //Read FIRM1
-        path = "homebrew/a9lh/firm1.bin";
+        path = "homebrew/3ds/ShadowNAND_Installer/firm1.bin";
         if(fileRead((void *)FIRM1_OFFSET, path) != FIRM1_SIZE)
             shutdown(1, "Error: firm1.bin doesn't exist or has a wrong size");
 
@@ -130,7 +130,7 @@ static inline void installer(u32 a9lhBoot)
 
     //Inject stage1
     memset32((void *)STAGE1_OFFSET, 0, MAX_STAGE1_SIZE);
-    path = "homebrew/a9lh/payload_stage1.bin";
+    path = "homebrew/3ds/ShadowNAND_Installer/payload_stage1.bin";
     u32 size = fileRead((void *)STAGE1_OFFSET, path);
     if(!size || size > MAX_STAGE1_SIZE)
         shutdown(1, "Error: payload_stage1.bin doesn't exist or\nexceeds max size");
@@ -141,14 +141,14 @@ static inline void installer(u32 a9lhBoot)
 
     //Read stage2
     memset32((void *)STAGE2_OFFSET, 0, MAX_STAGE2_SIZE);
-    path = "homebrew/a9lh/payload_stage2.bin";
+    path = "homebrew/3ds/ShadowNAND_Installer/payload_stage2.bin";
     size = fileRead((void *)STAGE2_OFFSET, path);
     if(!size || size > MAX_STAGE2_SIZE)
         shutdown(1, "Error: payload_stage2.bin doesn't exist or\nexceeds max size");
 
     //Read alt_stage2
     memset32((void *)ALTSTAGE2_OFFSET, 0, MAX_ALTSTAGE2_SIZE);
-    path = "homebrew/a9lh/payload_altstage2.bin";
+    path = "homebrew/3ds/ShadowNAND_Installer/payload_altstage2.bin";
     size = fileRead((void *)ALTSTAGE2_OFFSET, path);
     if(!size || size > MAX_ALTSTAGE2_SIZE)
         shutdown(1, "Error: payload_altstage2.bin doesn't exist or\nexceeds max size");
@@ -163,67 +163,4 @@ static inline void installer(u32 a9lhBoot)
     writeFirm((u8 *)FIRM0_OFFSET, 0, FIRM0_SIZE);
 
     shutdown(2, a9lhBoot ? "Update: success!" : "Full install: success!");
-}
-
-static inline void uninstaller(void)
-{
-    posY = drawString("You are about to uninstall A9LH!", 10, posY + 10, COLOR_RED);
-    posY = drawString("Doing this will require having 9.0 to reinstall!", 10, posY, COLOR_RED);
-    posY = drawString("If you would like to continue, press:", 10, posY, COLOR_WHITE);
-    posY = drawString("Up, Down, Left, Right, B, A, START, SELECT", 10, posY, COLOR_WHITE);
-
-    u32 unlockSequence[] = { BUTTON_UP, BUTTON_DOWN, BUTTON_LEFT, BUTTON_RIGHT, BUTTON_B, BUTTON_A, BUTTON_START, BUTTON_SELECT },
-        sequenceSize = sizeof(unlockSequence) / sizeof(u32);
-
-    for(u32 correctPresses = 0; correctPresses < sequenceSize; correctPresses++)
-    {
-        if(waitInput() != unlockSequence[correctPresses])
-            shutdown(1, "Button sequence not entered correctly");
-    }
-
-    //New 3DSes need a key sector with a proper key2, Old 3DSes have a blank key sector
-    if(console)
-    {
-        setupKeyslot0x11(1, NULL);
-        getSector((u8 *)SECTOR_OFFSET);
-        if(memcmp((void *)(SECTOR_OFFSET + 0x10), key2s[1], 0x10) != 0 && memcmp((void *)(SECTOR_OFFSET + 0x10), key2s[2], 0x10) != 0)
-            shutdown(1, "Error: the OTP hash or the NAND key sector\nare invalid");
-        generateSector((u8 *)SECTOR_OFFSET, 1);
-    }
-    else memset32((void *)SECTOR_OFFSET, 0, 0x200);
-
-    if(!mountCTRNAND())
-        shutdown(1, "Error: failed to mount CTRNAND");
-
-    //Read FIRM cxi from CTRNAND
-    switch(firmRead((void *)FIRM0_OFFSET))
-    {
-        case 1:
-            shutdown(1, "Error: more than one FIRM cxi has been detected");
-            break;
-        case 2:
-            shutdown(1, "Error: a FIRM equal or newer than 11.0\nhas been detected");
-            break;
-        default:
-            break;
-    }
-
-    //Decrypt it and get its size
-    u32 firmSize = decryptExeFs((void *)FIRM0_OFFSET);
-
-    //writeFirm encrypts in-place, so we need two copies
-    memcpy((void *)FIRM1_OFFSET, (void *)FIRM0_OFFSET, firmSize);
-
-    //Zero out the stage2 space on NAND
-    memset32((void *)STAGE2_OFFSET, 0, MAX_STAGE2_SIZE);
-
-    posY = drawString("All checks passed, uninstalling...", 10, posY + SPACING_Y, COLOR_WHITE);
-
-    //Point of no return, install stuff in the safest order
-    sdmmc_nand_writesectors(0x96, 1, (vu8 *)SECTOR_OFFSET);
-    writeFirm((u8 *)FIRM0_OFFSET, 0, firmSize);
-    writeFirm((u8 *)FIRM1_OFFSET, 1, firmSize);
-    sdmmc_nand_writesectors(0x5C000, 0x20, (vu8 *)STAGE2_OFFSET);
-
-    shutdown(2, "Uninstall: success!");
 }
