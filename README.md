@@ -1,5 +1,5 @@
 # ShadowNAND Installer
-*ShadowNAND installer/updater/uninstaller*
+*ShadowNAND installer/updater*
 
 **Usage / Features:**
 
